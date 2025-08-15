@@ -1,12 +1,26 @@
 ;
-; Запускает Windows Terminal, максимизирует его и открывает в нем две
-; горизонтальные панели.
+; Запускает Windows Terminal и делает Snap.
+;
+StartWT(snap) {
+    wt := Format("{1}\Microsoft\WindowsApps\wt.exe", EnvGet("LocalAppData"))
+    wt := Format("`"{1}`" --window new", wt)
+    StartExe(wt, "", "ahk_exe WindowsTerminal.exe")
+    Send("#{" . snap . "}")
+}
+
+;
+; Запускает Windows Terminal и делает Snap влево
 ;
 ^!t::
 {
-    wt := Format("{1}\Microsoft\WindowsApps\wt.exe", EnvGet("LocalAppData"))
-    wt := Format("`"{1}`" --window new", wt)
-    StartExe(wt, "Max", "ahk_exe WindowsTerminal.exe")
-    Send("!+{=}")
-    Send("^!{Right}")
+    StartWT("Left")
+}
+
+
+;
+; Запускает Windows Terminal и делает Snap вправо.
+;
+^+t::
+{
+    StartWT("Right")
 }
