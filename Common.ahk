@@ -1,24 +1,26 @@
 ;
-; Запускает приложение по его path и ждет когда появится новое окно
-; этого приложения
+; Pins the window to all desktops.
 ;
-StartExe(cmdline, options := "", winfilter := "") {
-    if(winfilter == "") {
-        SplitPath(cmdline, &name)
-        winfilter := Format("ahk_exe {1}", name)
-    }
+PinWindow(hwnd) {
+    ; Get `IServiceProvider`
+    static CLSID_ImmersiveShell := "{C2F03A33-21F5-47FA-B4BB-156362A2F239}"
+    static IID_IServiceProvider := "{6D5140C1-7436-11CE-8034-00AA006009FA}"
+    static serviceProvider := ComObject(CLSID_ImmersiveShell, IID_IServiceProvider)
 
-    ; тут мы сразу получим 0, если активно окно не этого приложения
-    ; либо HWND окна если активно окно уже запущенного этого приложения
-    hwnd := WinWaitActive(winfilter, , 0)
+    ; Call `QueryService` for `IVirtualDesktopPinnedApps` on `serviceProvider`
+    static CLSID_VirtualDesktopPinnedApps := "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}"
+    static IID_IVirtualDesktopPinnedApps := "{4CE81583-1E4C-4632-A621-07A53543148F}"
+    static pinnedApps := ComObjQuery(serviceProvider, CLSID_VirtualDesktopPinnedApps, IID_IVirtualDesktopPinnedApps)
 
-    Run(cmdline, , options)
+    ; Call `QueryService` for `IApplicationViewCollection` on `serviceProvider`
+    static IID_IApplicationViewCollection := "{1841C6D7-4F9D-42C0-AF41-8747538F10E5}"
+    static appViews := ComObjQuery(serviceProvider, IID_IApplicationViewCollection, IID_IApplicationViewCollection)
 
-    ; а теперь в цикле ждём когда появится окно приложения отличное от того
-    ; что было активно до этого - если прежнее окно это было окно другого
-    ; приложения, то hwnd == 0 и мы сразу выйдем из цикла
-    hwnd2 := WinWaitActive(winfilter)
-    while(hwnd2 == hwnd) {
-        hwnd2 := WinWaitActive(winfilter)
-    }
+    view := 0
+    ; Call `IApplicationViewCollection.GetViewFromHwnd`
+    ComCall(6, appViews, "ptr", hwnd, "ptr*", &view)
+    ; Call `IVirtualDesktopPinnedApps.PinView`
+    ComCall(7, pinnedApps, "ptr", view)
+    ; Call `IUnknown.Release` on `view`
+    ComCall(2, view)
 }

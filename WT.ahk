@@ -1,26 +1,36 @@
 ;
-; Запускает Windows Terminal и делает Snap.
+; Runs Windows Terminal and wait for its window.
 ;
-StartWT(snap) {
-    wt := Format("{1}\Microsoft\WindowsApps\wt.exe", EnvGet("LocalAppData"))
-    wt := Format("`"{1}`" --window new", wt)
-    StartExe(wt, "", "ahk_exe WindowsTerminal.exe")
-    Send("#{" . snap . "}")
+RunWT() {
+    static wtexe := Format("{1}\Microsoft\WindowsApps\wt.exe", EnvGet("LocalAppData"))
+    static wtcmd := Format("`"{1}`" --window new", wtexe)
+    static filter := "ahk_exe WindowsTerminal.exe"
+
+    ; Zero or current active terminal window
+    hwnd := WinWaitActive(filter, , 0)
+    Run(wtcmd)
+    ; Ensures the active terminal window is a new one
+    hwnd2 := WinWaitActive(filter)
+    while(hwnd2 == hwnd) {
+        hwnd2 := WinWaitActive(filter)
+    }
 }
 
 ;
-; Запускает Windows Terminal и делает Snap влево
+; Runs `msedge` end snap it to the left side.
 ;
 ^!t::
 {
-    StartWT("Left")
+    RunWT()
+    Send("#{Left}")
 }
 
 
 ;
-; Запускает Windows Terminal и делает Snap вправо.
+; Runs `msedge` end snap it to the right side.
 ;
-^+t::
+^!+t::
 {
-    StartWT("Right")
+    RunWT()
+    Send("#{Right}")
 }
